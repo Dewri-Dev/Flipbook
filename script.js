@@ -124,7 +124,11 @@ function initFlipbook() {
         const pageNum = e.data + 1;
         currentPageEl.textContent = pageNum;
         updateActiveThumbnail(pageNum - 1);
-        if (soundEnabled) {
+    });
+
+    // Play sound at the start of flipping
+    pageFlip.on('changeState', (e) => {
+        if (e.data === 'flipping' && soundEnabled) {
             audio.currentTime = 0;
             audio.play().catch(err => console.log('Audio play blocked'));
         }

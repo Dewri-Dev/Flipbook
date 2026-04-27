@@ -1,24 +1,31 @@
 :root {
-    --bg-color: #f4f4f7;
+    /* Color Palette - Professional White */
+    --bg-main: #f8fafc;
+    --bg-viewer: #f1f5f9;
     --sidebar-bg: #ffffff;
-    --toolbar-bg: #ffffff;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
-    --accent-color: #3b82f6;
-    --border-color: #e5e7eb;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --transition: all 0.3s ease;
+    --toolbar-bg: rgba(255, 255, 255, 0.9);
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --border-color: #e2e8f0;
+    --card-bg: #ffffff;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
-    background-color: var(--bg-color);
+    background-color: var(--bg-main);
     color: var(--text-primary);
     overflow: hidden;
     height: 100vh;
@@ -30,34 +37,29 @@ body {
     width: 100vw;
 }
 
-/* Right Sidebar Styling */
+/* Sidebar Styling - Pages */
 .sidebar-right {
-    width: 220px;
+    width: 240px;
     background-color: var(--sidebar-bg);
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
-    position: relative;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+    z-index: 200;
 }
 
 .sidebar-right.hidden {
     transform: translateX(100%);
-    position: absolute;
-    right: 0;
-    height: 100%;
 }
 
 .sidebar-header {
-    padding: 1.25rem 1rem;
+    padding: 1.25rem;
     border-bottom: 1px solid var(--border-color);
-    text-align: center;
+    background: #fff;
 }
 
 .sidebar-header h3 {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-primary);
     text-transform: uppercase;
@@ -67,14 +69,12 @@ body {
 .thumbnail-container {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
-    padding: 1.5rem 1rem;
+    padding: 1.5rem 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     align-items: center;
-    scrollbar-width: thin;
-    scrollbar-color: var(--accent-color) transparent;
+    background: #fdfdfd;
 }
 
 .thumbnail-container::-webkit-scrollbar {
@@ -82,20 +82,22 @@ body {
 }
 
 .thumbnail-container::-webkit-scrollbar-thumb {
-    background-color: var(--accent-color);
+    background-color: var(--border-color);
     border-radius: 10px;
 }
 
+/* Reverted Thumbnail Item Style */
 .thumbnail-item {
     cursor: pointer;
     border: 2px solid transparent;
     transition: var(--transition);
     border-radius: 8px;
     overflow: hidden;
-    background: #fff;
+    background: #ffffff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     flex: 0 0 auto;
     width: 160px;
+    position: relative;
 }
 
 .thumbnail-item:hover {
@@ -106,7 +108,7 @@ body {
 
 .thumbnail-item.active {
     border-color: var(--accent-color);
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
 }
 
 .thumbnail-item canvas {
@@ -132,12 +134,12 @@ body {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    background: radial-gradient(circle, #f0f2f5 0%, #e2e8f0 100%);
+    background: #eef2f6;
 }
 
 .toolbar {
-    height: 60px;
-    background-color: rgba(255, 255, 255, 0.9);
+    height: 64px;
+    background-color: var(--toolbar-bg);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-color);
     display: flex;
@@ -145,7 +147,7 @@ body {
     align-items: center;
     padding: 0 1.5rem;
     z-index: 150;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 .toolbar-left, .toolbar-center, .toolbar-right {
@@ -156,17 +158,18 @@ body {
 
 .file-name {
     font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
     max-width: 200px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--accent-color);
 }
 
 .icon-btn {
-    background: none;
+    background: transparent;
     border: none;
-    padding: 8px;
+    padding: 10px;
     cursor: pointer;
     border-radius: 8px;
     color: var(--text-secondary);
@@ -177,22 +180,27 @@ body {
 }
 
 .icon-btn:hover {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: #f1f5f9;
     color: var(--accent-color);
 }
 
 .icon-btn:active {
-    background-color: rgba(59, 130, 246, 0.2);
+    background-color: #e2e8f0;
 }
 
 .page-info {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    min-width: 100px;
+    min-width: 110px;
     text-align: center;
-    background: #f3f4f6;
-    padding: 4px 12px;
+    background: #f1f5f9;
+    padding: 6px 14px;
     border-radius: 20px;
+    color: var(--text-primary);
+}
+
+#current-page {
+    color: var(--accent-color);
 }
 
 /* Flipbook Area */
@@ -203,17 +211,15 @@ body {
     justify-content: center;
     padding: 40px;
     overflow: auto;
-    perspective: 3000px;
 }
 
 .flipbook {
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
 .page {
     background-color: white;
     overflow: hidden;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
 }
 
 .page-content {
@@ -222,6 +228,28 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+}
+
+/* Subtle page shadows */
+.page-content::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 40px;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.page:nth-child(odd) .page-content::after {
+    right: 0;
+    background: linear-gradient(to left, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 100%);
+}
+
+.page:nth-child(even) .page-content::after {
+    left: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 100%);
 }
 
 .page-content canvas {
@@ -234,7 +262,7 @@ body {
 .loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -259,42 +287,13 @@ body {
 }
 
 /* Mobile Responsiveness */
-.mobile-only {
-    display: none;
-}
-
 @media (max-width: 768px) {
-    .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100%;
-        transform: translateX(-100%);
-    }
-
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
-    .mobile-only {
-        display: block;
-    }
-
-    .file-name {
+    .toolbar-left {
         display: none;
     }
 
     .toolbar {
-        padding: 0 0.5rem;
-    }
-
-    .toolbar-center {
-        gap: 0.25rem;
-    }
-
-    .page-info {
-        min-width: auto;
-        font-size: 0.8rem;
+        padding: 0 0.75rem;
     }
 
     .flipbook-wrapper {
