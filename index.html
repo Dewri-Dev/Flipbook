@@ -36,6 +36,9 @@
                 </div>
 
                 <div class="toolbar-right">
+                    <button id="toggle-autoflip" class="icon-btn" title="Auto-flip (Slideshow)">
+                        <i data-lucide="play"></i>
+                    </button>
                     <button id="toggle-thumbnails" class="icon-btn" title="Toggle Thumbnails">
                         <i data-lucide="layout-panel-right"></i>
                     </button>
@@ -56,10 +59,16 @@
                 </div>
             </div>
 
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                <input type="range" id="page-slider" min="1" max="100" value="1">
+            </div>
+
             <!-- Loading Overlay -->
             <div id="loading-overlay" class="loading-overlay">
                 <div class="spinner"></div>
                 <p style="letter-spacing: 0.1em; font-size: 0.8rem; font-weight: 600; color: var(--accent-color); text-transform: uppercase;">Preparing Experience</p>
+                <span id="loading-progress">0%</span>
             </div>
         </main>
 
