@@ -10,11 +10,11 @@ let totalPages = 0;
 let isMobile = window.innerWidth <= 768;
 let soundEnabled = true;
 
-// Page Flip Sound (Base64)
-const flipSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YT9vT18AZm5mZnx9fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX19fX18');
-// (Shortened for brevity, I will use a better sounding one in the implementation)
-const PAGE_FLIP_SOUND_URL = 'https://www.soundjay.com/misc/sounds/page-flip-01a.mp3';
-const audio = new Audio(PAGE_FLIP_SOUND_URL);
+// Custom Page Flip Sound
+// 1. Place your sound file in the project folder
+// 2. Name it 'page-flip.mp3' (or change the filename below)
+const PAGE_FLIP_SOUND_PATH = 'page-flip.mp3';
+const audio = new Audio(PAGE_FLIP_SOUND_PATH);
 
 // Initialize Lucide Icons
 lucide.createIcons();
