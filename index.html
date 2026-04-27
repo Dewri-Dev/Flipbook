@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipbook PDF Viewer</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Page Flip Library -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Main Viewer Area -->
+        <main class="viewer-main">
+            <!-- Top Toolbar -->
+            <header class="toolbar">
+                <div class="toolbar-left">
+                    <span class="file-name">Micro_Project Final Draft.pdf</span>
+                </div>
+
+                <div class="toolbar-center">
+                    <button id="first-page" class="icon-btn" title="First Page"><i data-lucide="chevrons-left"></i></button>
+                    <button id="prev-page" class="icon-btn" title="Previous Page"><i data-lucide="chevron-left"></i></button>
+                    <span class="page-info">
+                        Page <span id="current-page">1</span> of <span id="total-pages">0</span>
+                    </span>
+                    <button id="next-page" class="icon-btn" title="Next Page"><i data-lucide="chevron-right"></i></button>
+                    <button id="last-page" class="icon-btn" title="Last Page"><i data-lucide="chevrons-right"></i></button>
+                </div>
+
+                <div class="toolbar-right">
+                    <button id="toggle-thumbnails" class="icon-btn" title="Toggle Thumbnails">
+                        <i data-lucide="layout-panel-right"></i>
+                    </button>
+                    <button id="toggle-sound" class="icon-btn" title="Toggle Sound">
+                        <i data-lucide="volume-2"></i>
+                    </button>
+                    <button id="zoom-out" class="icon-btn" title="Zoom Out"><i data-lucide="zoom-out"></i></button>
+                    <span id="zoom-level">100%</span>
+                    <button id="zoom-in" class="icon-btn" title="Zoom In"><i data-lucide="zoom-in"></i></button>
+                    <button id="toggle-fullscreen" class="icon-btn" title="Fullscreen"><i data-lucide="maximize"></i></button>
+                </div>
+            </header>
+
+            <!-- Flipbook Container -->
+            <div class="flipbook-wrapper" id="flipbook-wrapper">
+                <div id="flipbook" class="flipbook">
+                    <!-- Pages will be injected here -->
+                </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <p>Loading PDF...</p>
+            </div>
+        </main>
+
+        <!-- Right Thumbnails Sidebar -->
+        <aside class="sidebar-right" id="sidebar-right">
+            <div class="sidebar-header">
+                <h3>Thumbnails</h3>
+            </div>
+            <div id="thumbnail-container" class="thumbnail-container">
+                <!-- Thumbnails will be injected here -->
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
