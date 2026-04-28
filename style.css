@@ -37,25 +37,138 @@ body {
     width: 100vw;
 }
 
+/* Jump Container */
+.jump-container {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+}
+
+#jump-input {
+    width: 50px;
+    border: none;
+    background: transparent;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    outline: none;
+    text-align: center;
+}
+
+#jump-input::-webkit-inner-spin-button,
+#jump-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Search Container */
+.search-container {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.search-container:focus-within {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+#search-input-field {
+    width: 0;
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-container.active #search-input-field {
+    width: 150px;
+    padding: 4px 12px;
+}
+
+/* Sidebar Scroll Buttons */
+.sidebar-scroll-btn {
+    background: var(--sidebar-bg);
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition);
+    z-index: 10;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#scroll-down {
+    border-bottom: none;
+    border-top: 1px solid var(--border-color);
+}
+
+.sidebar-scroll-btn:hover {
+    background: #f8fafc;
+    color: var(--accent-color);
+}
+
 /* Sidebar Styling - Pages */
 .sidebar-right {
-    width: 240px;
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px;
     background-color: var(--sidebar-bg);
     border-left: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 200;
+    z-index: 1000;
 }
 
 .sidebar-right.hidden {
-    transform: translateX(100%);
+    transform: translateX(280px);
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
 }
 
 .sidebar-header {
     padding: 1.25rem;
     border-bottom: 1px solid var(--border-color);
     background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mobile-only {
+    display: none;
 }
 
 .sidebar-header h3 {
@@ -327,25 +440,176 @@ body {
     color: white;
 }
 
-/* Hard Cover Effect */
+/* Hard Cover Effect - Premium Look */
 .page-cover {
-    background-color: #1e293b !important; /* Darker professional cover */
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
     color: white;
+    box-shadow: inset -5px 0 15px rgba(0,0,0,0.3);
 }
 
-.page-cover .page-content::before {
+.page-cover::after {
     content: '';
     position: absolute;
-    inset: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.05) 100%);
     pointer-events: none;
 }
 
-/* Search Bar (Future Proofing) */
-.search-container {
+/* Page Shine/Glow for 3D effect */
+.page-content::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    z-index: 4;
+}
+
+/* Tooltip Simulation (Simple CSS) */
+.icon-btn {
     position: relative;
-    display: flex;
+}
+
+.icon-btn::before {
+    content: attr(title);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: #1e293b;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+    z-index: 3000;
+}
+
+.icon-btn:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Scrollbar refinement for Sidebar */
+.thumbnail-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.thumbnail-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.thumbnail-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.thumbnail-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Desktop Sidebar refinement */
+.sidebar-right {
+    box-shadow: -2px 0 10px rgba(0,0,0,0.02);
+}
+
+/* Active Page Indicator in Thumbnails */
+.thumbnail-item.active .thumbnail-page-num {
+    background: var(--accent-color);
+    color: white;
+    border-top: none;
+}
+
+/* Slider Preview Tooltip */
+.slider-preview {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: white;
+    padding: 6px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-xl);
+    display: none;
+    flex-direction: column;
     align-items: center;
+    gap: 4px;
+    z-index: 2000;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.slider-preview.active {
+    display: flex;
+    transform: translateX(-50%) scale(1);
+}
+
+.slider-preview canvas {
+    width: 120px;
+    height: auto;
+    border-radius: 4px;
+}
+
+#preview-page-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+/* Bottom Thumbnail Tray (Horizontal Slidebar) */
+.bottom-thumbnail-tray {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    width: 90%;
+    max-width: 1000px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    z-index: 90;
+    display: none;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-xl);
+}
+
+.bottom-thumbnail-tray.active {
+    display: block;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.bottom-thumbnail-container {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+}
+
+.bottom-thumbnail-container::-webkit-scrollbar {
+    height: 4px;
+}
+
+.bottom-thumbnail-container .thumbnail-item {
+    width: 100px;
+    flex: 0 0 auto;
+}
+
+.bottom-thumbnail-container .thumbnail-page-num {
+    font-size: 0.65rem;
+    padding: 2px 0;
 }
 
 #search-input {
@@ -396,15 +660,48 @@ body {
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+    .mobile-only {
+        display: flex;
+    }
+
+    .sidebar-right {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 85%;
+        max-width: 320px;
+        margin-right: 0;
+        transform: translateX(100%);
+        box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        z-index: 1000;
+    }
+
+    .sidebar-right.hidden {
+        transform: translateX(100%);
+        margin-right: 0;
+    }
+
+    .sidebar-right:not(.hidden) {
+        transform: translateX(0);
+    }
+
     .toolbar-left {
         display: none;
     }
 
     .toolbar {
         padding: 0 0.75rem;
+        height: 56px;
     }
 
     .flipbook-wrapper {
         padding: 1rem;
+    }
+
+    .progress-bar-container {
+        width: 90%;
+        bottom: 15px;
+        z-index: 50; /* Ensure it stays behind the sidebar/overlay */
     }
 }

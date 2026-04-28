@@ -14,6 +14,8 @@ let soundEnabled = true;
 let autoFlipInterval = null;
 let isAutoFlipping = false;
 let renderedPages = new Set();
+let thumbnailObserver = null;
+let bottomThumbnailObserver = null;
 
 // Custom Page Flip Sound
 const PAGE_FLIP_SOUND_PATH = 'page-flip.mp3';
@@ -25,6 +27,8 @@ lucide.createIcons();
 // Elements
 const flipbookEl = document.getElementById('flipbook');
 const thumbnailContainer = document.getElementById('thumbnail-container');
+const bottomThumbnailContainer = document.getElementById('bottom-thumbnail-container');
+const bottomThumbnailTray = document.getElementById('bottom-thumbnail-tray');
 const loadingOverlay = document.getElementById('loading-overlay');
 const loadingProgress = document.getElementById('loading-progress');
 const currentPageEl = document.getElementById('current-page');
@@ -32,13 +36,26 @@ const totalPagesEl = document.getElementById('total-pages');
 const zoomLevelEl = document.getElementById('zoom-level');
 const sidebarRight = document.getElementById('sidebar-right');
 const pageSlider = document.getElementById('page-slider');
+const sliderPreview = document.getElementById('slider-preview');
+const previewCanvas = document.getElementById('preview-canvas');
+const previewPageNum = document.getElementById('preview-page-num');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
+const toggleSidebarBtn = document.getElementById('toggle-sidebar');
+const jumpInput = document.getElementById('jump-input');
+const jumpBtn = document.getElementById('jump-btn');
+const searchBtn = document.getElementById('search-btn');
+const searchContainer = document.getElementById('search-container');
+const searchInputField = document.getElementById('search-input-field');
+const scrollUpBtn = document.getElementById('scroll-up');
+const scrollDownBtn = document.getElementById('scroll-down');
+const closeSidebarBtn = document.getElementById('close-sidebar');
 
 // PDF.js Setup
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 async function init() {
     try {
-        // Load PDF
         const loadingTask = pdfjsLib.getDocument(PDF_PATH);
         
         loadingTask.onProgress = (progress) => {
@@ -50,59 +67,46 @@ async function init() {
         totalPages = pdfDoc.numPages;
         totalPagesEl.textContent = totalPages;
         pageSlider.max = totalPages;
+        jumpInput.max = totalPages;
 
-        // Create Page Containers (Lazy Rendering)
         createPageContainers();
-
-        // Initialize Flipbook
         initFlipbook();
-
-        // Initial Page Render (Current + Next)
         await renderNeighborPages(0);
 
-        // Generate Thumbnails (Background)
-        generateThumbnails();
+        setupObservers();
+        generateThumbnailPlaceholders();
 
-        // Hide Loading Overlay
         loadingOverlay.style.opacity = '0';
         setTimeout(() => loadingOverlay.style.display = 'none', 300);
 
-        // Setup Event Listeners
         setupEventListeners();
-
-        // Initial scale adjustment
         setTimeout(adjustScale, 500);
 
     } catch (error) {
         console.error('Error initializing flipbook:', error);
-        alert('Error loading PDF. Please ensure the file exists and you are running this through a local server.');
     }
 }
 
 function createPageContainers() {
+    flipbookEl.innerHTML = '';
+    renderedPages.clear();
     for (let i = 1; i <= totalPages; i++) {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'page';
-        
-        // Hard Cover for first and last pages
         if (i === 1 || i === totalPages) {
             pageDiv.classList.add('page-cover');
             pageDiv.setAttribute('data-density', 'hard');
         } else {
             pageDiv.setAttribute('data-density', 'soft');
         }
-        
         const contentDiv = document.createElement('div');
         contentDiv.className = 'page-content';
         contentDiv.id = `page-${i}`;
-        
-        // Placeholder or Spinner
         const loader = document.createElement('div');
         loader.className = 'spinner';
         loader.style.width = '20px';
         loader.style.height = '20px';
         contentDiv.appendChild(loader);
-
         pageDiv.appendChild(contentDiv);
         flipbookEl.appendChild(pageDiv);
     }
@@ -110,45 +114,34 @@ function createPageContainers() {
 
 async function renderPage(pageNum, scale = 2.0) {
     if (renderedPages.has(pageNum) && scale === 2.0) return;
-    
     const container = document.getElementById(`page-${pageNum}`);
     if (!container) return;
-
     try {
         const page = await pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
-        
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
-
         await page.render({ canvasContext: context, viewport }).promise;
-        
-        container.innerHTML = ''; // Clear loader
+        container.innerHTML = ''; 
         container.appendChild(canvas);
         renderedPages.add(pageNum);
-    } catch (err) {
-        console.error(`Error rendering page ${pageNum}:`, err);
-    }
+    } catch (err) {}
 }
 
 async function renderNeighborPages(currentIndex) {
     const pagesToRender = [currentIndex + 1];
-    
-    // In double page mode, we might need more
     if (currentIndex + 2 <= totalPages) pagesToRender.push(currentIndex + 2);
     if (currentIndex > 0) pagesToRender.push(currentIndex);
     if (currentIndex + 3 <= totalPages) pagesToRender.push(currentIndex + 3);
-
     for (const pageNum of pagesToRender) {
-        if (pageNum >= 1 && pageNum <= totalPages) {
-            renderPage(pageNum);
-        }
+        if (pageNum >= 1 && pageNum <= totalPages) renderPage(pageNum);
     }
 }
 
 function initFlipbook() {
+    if (pageFlip) pageFlip.destroy();
     pageFlip = new St.PageFlip(flipbookEl, {
         width: PAGE_WIDTH,
         height: PAGE_HEIGHT,
@@ -159,18 +152,13 @@ function initFlipbook() {
         maxHeight: 1350,
         maxShadowOpacity: 0.3,
         showCover: true,
-        mobileScrollSupport: false,
         flippingTime: 800,
         usePortrait: isMobile,
-        startZIndex: 0,
         autoSize: true,
         drawShadow: true,
         clickEventForward: true
     });
-
     pageFlip.loadFromHTML(document.querySelectorAll('.page'));
-
-    // Update page info on flip
     pageFlip.on('flip', (e) => {
         const pageNum = e.data + 1;
         currentPageEl.textContent = pageNum;
@@ -178,100 +166,199 @@ function initFlipbook() {
         updateActiveThumbnail(pageNum - 1);
         renderNeighborPages(e.data);
     });
-
-    // Play sound at the start of flipping
     pageFlip.on('changeState', (e) => {
         if (e.data === 'flipping' && soundEnabled) {
             audio.currentTime = 0;
             audio.play().catch(err => {});
         }
     });
-
     currentPageEl.textContent = pageFlip.getCurrentPageIndex() + 1;
 }
 
-async function generateThumbnails() {
+function setupObservers() {
+    const options = { root: null, rootMargin: '100px' };
+    thumbnailObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const pageNum = parseInt(entry.target.getAttribute('data-page'));
+                renderThumbnail(pageNum, entry.target);
+                thumbnailObserver.unobserve(entry.target);
+            }
+        });
+    }, options);
+
+    bottomThumbnailObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const pageNum = parseInt(entry.target.getAttribute('data-page'));
+                renderThumbnail(pageNum, entry.target);
+                bottomThumbnailObserver.unobserve(entry.target);
+            }
+        });
+    }, { root: bottomThumbnailTray, rootMargin: '100px' });
+}
+
+function generateThumbnailPlaceholders() {
+    thumbnailContainer.innerHTML = '';
+    bottomThumbnailContainer.innerHTML = '';
     for (let i = 1; i <= totalPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const originalViewport = page.getViewport({ scale: 1 });
-        const scale = 160 / originalViewport.width;
-        const viewport = page.getViewport({ scale });
-        
-        const thumbItem = document.createElement('div');
-        thumbItem.className = 'thumbnail-item';
-        if (i === 1) thumbItem.classList.add('active');
-        thumbItem.onclick = () => pageFlip.turnToPage(i - 1);
-
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        await page.render({ canvasContext: context, viewport }).promise;
-
-        const pageNum = document.createElement('div');
-        pageNum.className = 'thumbnail-page-num';
-        pageNum.textContent = `PAGE ${i}`;
-
-        thumbItem.appendChild(canvas);
-        thumbItem.appendChild(pageNum);
-        thumbnailContainer.appendChild(thumbItem);
+        const createThumb = (container, observer) => {
+            const thumbItem = document.createElement('div');
+            thumbItem.className = 'thumbnail-item loading';
+            thumbItem.setAttribute('data-page', i);
+            if (i === 1) thumbItem.classList.add('active');
+            thumbItem.onclick = () => {
+                pageFlip.turnToPage(i - 1);
+                if (isMobile) toggleSidebar();
+            };
+            const pageNumLabel = document.createElement('div');
+            pageNumLabel.className = 'thumbnail-page-num';
+            pageNumLabel.textContent = `PAGE ${i}`;
+            thumbItem.appendChild(pageNumLabel);
+            container.appendChild(thumbItem);
+            observer.observe(thumbItem);
+        };
+        createThumb(thumbnailContainer, thumbnailObserver);
+        createThumb(bottomThumbnailContainer, bottomThumbnailObserver);
     }
 }
 
+async function renderThumbnail(pageNum, container) {
+    try {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 160 / page.getViewport({ scale: 1 }).width });
+        const canvas = document.createElement('canvas');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        container.classList.remove('loading');
+        container.prepend(canvas);
+    } catch (err) {}
+}
+
+async function renderPreview(pageNum) {
+    try {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 120 / page.getViewport({ scale: 1 }).width });
+        previewCanvas.height = viewport.height;
+        previewCanvas.width = viewport.width;
+        await page.render({ canvasContext: previewCanvas.getContext('2d'), viewport }).promise;
+        previewPageNum.textContent = `Page ${pageNum}`;
+    } catch (err) {}
+}
+
 function updateActiveThumbnail(index) {
-    const thumbs = document.querySelectorAll('.thumbnail-item');
-    thumbs.forEach(t => t.classList.remove('active'));
-    if (thumbs[index]) {
-        thumbs[index].classList.add('active');
-        thumbs[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Update Right Sidebar
+    const sidebarThumbs = document.querySelectorAll('.thumbnail-container .thumbnail-item');
+    sidebarThumbs.forEach(t => t.classList.remove('active'));
+    if (sidebarThumbs[index]) {
+        sidebarThumbs[index].classList.add('active');
+        // Only scroll if sidebar is NOT hidden
+        if (!sidebarRight.classList.contains('hidden')) {
+            sidebarThumbs[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // Update Bottom Tray
+    const bottomThumbs = document.querySelectorAll('.bottom-thumbnail-container .thumbnail-item');
+    bottomThumbs.forEach(t => t.classList.remove('active'));
+    if (bottomThumbs[index]) {
+        bottomThumbs[index].classList.add('active');
+        // Only scroll if tray is active
+        if (bottomThumbnailTray.classList.contains('active')) {
+            bottomThumbs[index].scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
     }
 }
 
 function setupEventListeners() {
-    // Navigation
     document.getElementById('prev-page').onclick = () => pageFlip.flipPrev();
     document.getElementById('next-page').onclick = () => pageFlip.flipNext();
     document.getElementById('first-page').onclick = () => pageFlip.turnToPage(0);
     document.getElementById('last-page').onclick = () => pageFlip.turnToPage(totalPages - 1);
 
-    // Slider
-    pageSlider.oninput = (e) => {
-        const pageNum = parseInt(e.target.value);
-        pageFlip.turnToPage(pageNum - 1);
+    // Jump to Page
+    jumpBtn.onclick = () => {
+        const pageNum = parseInt(jumpInput.value);
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            pageFlip.turnToPage(pageNum - 1);
+        }
+    };
+    jumpInput.onkeydown = (e) => {
+        if (e.key === 'Enter') jumpBtn.click();
     };
 
-    // Zoom
+    // Search
+    searchBtn.onclick = () => {
+        searchContainer.classList.toggle('active');
+        if (searchContainer.classList.contains('active')) {
+            searchInputField.focus();
+        }
+    };
+
+    // Sidebar Toggle
+    toggleSidebarBtn.onclick = toggleSidebar;
+    if (closeSidebarBtn) closeSidebarBtn.onclick = toggleSidebar;
+    sidebarOverlay.onclick = toggleSidebar;
+
+    // Sidebar Scroll
+    scrollUpBtn.onclick = () => {
+        thumbnailContainer.scrollBy({ top: -300, behavior: 'smooth' });
+    };
+    scrollDownBtn.onclick = () => {
+        thumbnailContainer.scrollBy({ top: 300, behavior: 'smooth' });
+    };
+
+    pageSlider.oninput = (e) => {
+        const pageNum = parseInt(e.target.value);
+        renderPreview(pageNum);
+        const ratio = (pageNum - 1) / (totalPages - 1);
+        sliderPreview.style.left = `${ratio * 100}%`;
+        sliderPreview.classList.add('active');
+    };
+    
+    pageSlider.onchange = (e) => {
+        pageFlip.turnToPage(parseInt(e.target.value) - 1);
+        setTimeout(() => sliderPreview.classList.remove('active'), 500);
+    };
+
+    pageSlider.onmouseenter = () => sliderPreview.classList.add('active');
+    pageSlider.onmouseleave = () => sliderPreview.classList.remove('active');
+
     document.getElementById('zoom-in').onclick = () => updateZoom(0.2);
     document.getElementById('zoom-out').onclick = () => updateZoom(-0.2);
-
-    // Thumbnails Toggle
-    document.getElementById('toggle-thumbnails').onclick = toggleThumbnails;
-
-    // Fullscreen
-    document.getElementById('toggle-fullscreen').onclick = toggleFullscreen;
-
-    // Auto-flip
+    toggleFullscreenBtn.onclick = toggleFullscreen;
     document.getElementById('toggle-autoflip').onclick = toggleAutoFlip;
 
-    // Sound
     document.getElementById('toggle-sound').onclick = () => {
         soundEnabled = !soundEnabled;
-        const btn = document.getElementById('toggle-sound');
-        btn.innerHTML = soundEnabled ? '<i data-lucide="volume-2"></i>' : '<i data-lucide="volume-x"></i>';
+        document.getElementById('toggle-sound').innerHTML = soundEnabled ? '<i data-lucide="volume-2"></i>' : '<i data-lucide="volume-x"></i>';
         lucide.createIcons();
     };
 
-    // Keyboard Navigation
     document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') pageFlip.flipPrev();
         if (e.key === 'ArrowRight') pageFlip.flipNext();
         if (e.key === 'f') toggleFullscreen();
-        if (e.key === 's') toggleAutoFlip();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        const isFullscreen = !!document.fullscreenElement;
+        document.body.classList.toggle('fullscreen-mode', isFullscreen);
+        toggleFullscreenBtn.innerHTML = isFullscreen ? '<i data-lucide="minimize"></i>' : '<i data-lucide="maximize"></i>';
+        lucide.createIcons();
+        setTimeout(adjustScale, 500);
     });
 
     window.addEventListener('resize', () => {
-        isMobile = window.innerWidth <= 768;
+        const newIsMobile = window.innerWidth <= 768;
+        if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            const currentIndex = pageFlip.getCurrentPageIndex();
+            createPageContainers();
+            initFlipbook();
+            pageFlip.turnToPage(currentIndex);
+        }
         adjustScale();
     });
 }
@@ -279,16 +366,12 @@ function setupEventListeners() {
 function toggleAutoFlip() {
     isAutoFlipping = !isAutoFlipping;
     const btn = document.getElementById('toggle-autoflip');
-    
     if (isAutoFlipping) {
         btn.classList.add('active');
         btn.innerHTML = '<i data-lucide="pause"></i>';
         autoFlipInterval = setInterval(() => {
-            if (pageFlip.getCurrentPageIndex() < totalPages - 1) {
-                pageFlip.flipNext();
-            } else {
-                toggleAutoFlip(); // Stop at end
-            }
+            if (pageFlip.getCurrentPageIndex() < totalPages - 1) pageFlip.flipNext();
+            else toggleAutoFlip();
         }, 4000);
     } else {
         btn.classList.remove('active');
@@ -298,52 +381,44 @@ function toggleAutoFlip() {
     lucide.createIcons();
 }
 
+function toggleSidebar() {
+    const isNowHidden = sidebarRight.classList.toggle('hidden');
+    
+    // Sync overlay and button state with sidebar visibility
+    if (isNowHidden) {
+        sidebarOverlay.classList.remove('active');
+        toggleSidebarBtn.classList.remove('active');
+    } else {
+        sidebarOverlay.classList.add('active');
+        toggleSidebarBtn.classList.add('active');
+    }
+}
+
 function toggleThumbnails() {
-    sidebarRight.classList.toggle('hidden');
+    bottomThumbnailTray.classList.toggle('active');
     setTimeout(adjustScale, 400);
 }
 
 function adjustScale() {
     const wrapper = document.getElementById('flipbook-wrapper');
+    if (!wrapper || !pageFlip) return;
     const availableWidth = wrapper.clientWidth - 40;
     const availableHeight = wrapper.clientHeight - 40;
-    
-    const bookWidth = pageFlip.getBoundsRect().width;
-    const bookHeight = pageFlip.getBoundsRect().height;
-    
-    const scaleX = availableWidth / bookWidth;
-    const scaleY = availableHeight / bookHeight;
-    
-    currentZoom = Math.min(scaleX, scaleY, 1.1); 
-    applyZoom();
+    const bounds = pageFlip.getBoundsRect();
+    currentZoom = Math.min(availableWidth / bounds.width, availableHeight / bounds.height, 1.1); 
+    flipbookEl.style.transform = `scale(${currentZoom})`;
+    zoomLevelEl.textContent = `${Math.round(currentZoom * 100)}%`;
 }
 
 function updateZoom(delta) {
     currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 3);
-    applyZoom();
-    
-    // If zoomed in significantly, re-render current pages at higher res
-    if (currentZoom > 1.5) {
-        const index = pageFlip.getCurrentPageIndex();
-        renderPage(index + 1, currentZoom * 2);
-        if (index + 2 <= totalPages) renderPage(index + 2, currentZoom * 2);
-    }
-}
-
-function applyZoom() {
     flipbookEl.style.transform = `scale(${currentZoom})`;
     zoomLevelEl.textContent = `${Math.round(currentZoom * 100)}%`;
 }
 
 function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-    }
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
 }
 
-// Start
 init();
